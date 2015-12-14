@@ -8,6 +8,7 @@
     <RootNamespace>MyApplication</RootNamespace>
     <AssemblyName>MyApplication</AssemblyName>
     <Name>jobsinstaller</Name>
+    <DebugArguments>-distributionpath "Z:\shared\" -installdir "c:\Users\andreas ries\programme" -debugmode</DebugArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,6 +30,7 @@
   <ItemGroup />
   <ItemGroup>
     <Compile Include="install-jobs.ps1" />
+    <Compile Include="paramstest.ps1" />
     <Compile Include="RunAsAdmin.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
