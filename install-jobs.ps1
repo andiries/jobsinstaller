@@ -2,11 +2,29 @@
 # install-jobs.ps1
 #
 
-$jobsdistribution="D:\src\netorium\JOBS\jobs-distribution\target\jobs-distribution-0.0.25-SNAPSHOT.zip"
-$bobykar="D:\src\netorium\JOBS\jobsboby\jobsboby-feature\target\jobsboby-feature-0.0.25-SNAPSHOT.kar"
-$basedir="D:\programme"
+#region Helper functions
+
+Function ExitWithMessage($ExitMessage)
+{
+
+	Write-Host ("Distribution {0} doesn't exist!" -f $jobsdistribution)
+	Exit
+}
+
+#endregion
+
+#$distributionpath="D:\src\netorium\JOBS\jobs-distribution\target\"
+$distributionpath="Z:\shared\"
+$distributionname="jobs-distribution-0.0.25-SNAPSHOT"
+$bobykarname="jobsboby-feature-0.0.25-SNAPSHOT.kar"
+#$installbase="D:\programme"
+$installbase="c:\Users\andreas ries\programme"
+$jobsdistribution=(Join-Path -path $distributionpath -ChildPath $distributionname) + ".zip"
+$bobykar=Join-Path -path $distributionpath -ChildPath $bobykarname
 $company="netorium"
-$installdir=Join-Path -path $basedir -ChildPath $company
+$Jobsfolder="Jobs"
+
+$installdir=Join-Path -path $installbase -ChildPath $company
 
 if (-Not (Test-Path $jobsdistribution)) 
 {
@@ -24,6 +42,12 @@ if (-Not (Test-Path $installdir))
     }
 }
 
+if (-Not (Test-Path $bobykar)) 
+{
+    ExitWithMessage ("Boby kar file {0} doesn't exist!" -f $bobykar)
+}
+#Copy-Item $bobykar $installdir
+
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 #extracting distribution
@@ -33,17 +57,15 @@ if ($?.Equals($false))
 	ExitWithMessage ("Error unzipping distribution. ErrorMessage: {0}!" -f $Error[0])
 }
 
+Start-Sleep -Milliseconds 500
+Rename-Item -path (Join-Path -path $installdir -ChildPath $distributionname) -NewName $Jobsfolder
 
+$karafscript=[io.path]::combine($installdir, $Jobsfolder, "bin\karaf.bat")
+$karafscript="""$karafscript"""
 
+$cmdparams=@("/K";$karafscript)
+#Start-Process cmd.exe $cmdparams
 
-#Copy-Item $bobykar $installdir
 
 Write-Host "JOBS successfully installed"
 
-
-Function ExitWithMessage($ExitMessage)
-{
-
-	Write-Host ("Distribution {0} doesn't exist!" -f $jobsdistribution)
-	Exit
-}
