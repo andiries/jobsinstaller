@@ -31,7 +31,7 @@ $bobykarname="jobsboby-feature-0.0.25-SNAPSHOT.kar"
 $jobsdistribution=(Join-Path -path $distributionpath -ChildPath $distributionname) + ".zip"
 $bobykar=Join-Path -path $distributionpath -ChildPath $bobykarname
 $company="netorium"
-$jobsfolder="Jobs"
+$jobsfolder="B_Develop"
 
 $netoriuminstalldir=Join-Path -path $installdir -ChildPath $company
 
@@ -51,15 +51,14 @@ if (-Not (Test-Path $netoriuminstalldir))
     }
 }
 
-if (-Not (Test-Path $bobykar)) 
-{
-    ExitWithMessage ("Boby kar file {0} doesn't exist!" -f $bobykar)
-}
+#if (-Not (Test-Path $bobykar)) 
+#{
+#    ExitWithMessage ("Boby kar file {0} doesn't exist!" -f $bobykar)
+#}
 #Copy-Item $bobykar $netoriuminstalldir
 
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-
 #extracting distribution
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::ExtractToDirectory($jobsdistribution, $netoriuminstalldir)
 if ($?.Equals($False))
 {
@@ -76,7 +75,7 @@ $cmdparams=@("/K";$karafscript)
 
 if($debugmode.Equals($True))
 {
-	$cmdparams.Add("debug")
+	$cmdparams += "debug"
 }
 
 Start-Process cmd.exe $cmdparams

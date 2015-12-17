@@ -8,7 +8,7 @@
     <RootNamespace>MyApplication</RootNamespace>
     <AssemblyName>MyApplication</AssemblyName>
     <Name>jobsinstaller</Name>
-    <DebugArguments>-distributionpath "Z:\shared\" -installdir "c:\Users\andreas ries\programme" -debugmode</DebugArguments>
+    <DebugArguments>-distributionpath "D:\src\netorium\JOBS\jobs-distribution\target" -installdir "D:\Programme" -debugmode</DebugArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,9 +29,12 @@
   </PropertyGroup>
   <ItemGroup />
   <ItemGroup>
-    <Compile Include="install-jobs.ps1" />
-    <Compile Include="paramstest.ps1" />
-    <Compile Include="RunAsAdmin.ps1" />
+    <Compile Include="installhelpers.psm1" />
+    <Compile Include="install_jobs.ps1" />
+    <Compile Include="servicehelper.ps1" />
+    <Compile Include="start_jobs_from_distro.ps1" />
+    <Compile Include="install_jobs_service.ps1" />
+    <Compile Include="update_jobs.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />
