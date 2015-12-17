@@ -52,6 +52,9 @@ Function StartStopService ($jobsserviceid, $dostart)
 	}
     $processresult = Start-Process powershell.exe -PassThru -Wait -Verb Runas -ArgumentList '-windowstyle', 'Hidden', `
 	    '-File', "D:\tmp\powershell\jobsinstaller\servicehelper.ps1", $jobsserviceid, $startstopparam
+
+	#TODO replace with variable script location
+	#TODO Error handling
 }
 
 
@@ -83,7 +86,6 @@ ExtractDistro $jobsdistribution $netoriuminstalldir
 Write-Host "stopping windows service"
 StartStopService $jobsserviceid $False
 
-
 Write-Host "copying data"
 CopyDatabase $jobsinstalldir $netoriuminstalldir $distributionname
 
@@ -93,8 +95,7 @@ Remove-Item $jobsinstalldir -Recurse
 
 RenameToJobsfolder $netoriuminstalldir $distributionname $jobsfolder
 
-#$processresult = start-process powershell.exe -PassThru -Wait -Verb Runas -ArgumentList '-windowstyle', 'Hidden', `
-#		'-File', "D:\tmp\powershell\jobsinstaller\servicehelper.ps1", $jobsserviceid, '-dostartservice'
-
+Write-Host "starting windows service"
+StartStopService $jobsserviceid $True
 
 Write-Host "`n###### Netorium JOBS updated successfully ######`n"
