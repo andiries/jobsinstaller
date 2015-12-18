@@ -8,7 +8,7 @@
     <RootNamespace>MyApplication</RootNamespace>
     <AssemblyName>MyApplication</AssemblyName>
     <Name>jobsinstaller</Name>
-    <DebugArguments>-distributionpath "D:\src\netorium\JOBS\jobs-distribution\target" -installdir "D:\Programme" -debugmode</DebugArguments>
+    <DebugArguments>-installdir "D:\Programme"</DebugArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,9 +29,9 @@
   </PropertyGroup>
   <ItemGroup />
   <ItemGroup>
-    <Compile Include="installhelpers.psm1" />
     <Compile Include="install_jobs.ps1" />
     <Compile Include="servicehelper.ps1" />
+    <Compile Include="start_jobs_debug.ps1" />
     <Compile Include="start_jobs_from_distro.ps1" />
     <Compile Include="install_jobs_service.ps1" />
     <Compile Include="update_jobs.ps1" />

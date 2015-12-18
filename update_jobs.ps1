@@ -2,6 +2,41 @@
 # updates JOBS on windows
 #
 
+Function ExitWithMessage ($ExitMessage)
+{
+	Write-Host ($ExitMessage)
+	Exit
+}
+
+Function CheckDistroExists ($jobsdistribution)
+{
+	#check, if distro is here
+	if (-Not (Test-Path $jobsdistribution)) 
+	{
+		ExitWithMessage ("Distribution {0} doesn't exist" -f $jobsdistribution)
+	} 
+}
+
+Function ExtractDistro ($jobsdistribution, $netoriuminstalldir)
+{
+	#extracting distribution
+	Add-Type -AssemblyName System.IO.Compression.FileSystem
+	[System.IO.Compression.ZipFile]::ExtractToDirectory($jobsdistribution, $netoriuminstalldir)
+	if ($?.Equals($False))
+	{
+		ExitWithMessage ("Error unzipping distribution. ErrorMessage: {0}" -f $Error[0])
+	}
+}
+
+Function RenameToJobsfolder ($netoriuminstalldir, $distributionname, $jobsfolder)
+{
+	Rename-Item -path (Join-Path -path $netoriuminstalldir -ChildPath $distributionname) -NewName $jobsfolder
+	if ($?.Equals($False))
+	{
+		ExitWithMessage ("Could not rename extracted folder. ErrorMessage: {0}" -f $Error[0])
+    }
+}
+
 Function FindJobsInstallation ($jobsserviceid)
 {
 	#check if JOBS windows service runs and return the path to the service exe
@@ -28,18 +63,55 @@ Function ExtractNetoriumPath ($serviceexepath, $serviceexename)
 	return $netoriuminstalldir
 }
 
-Function CopyDatabase ($jobsinstalldir, $netoriuminstalldir, $distributionname)
+Function CopyData ($jobsinstalldir, $netoriuminstalldir, $distributionname)
 {
-	$dbpath=Join-Path -Path $jobsinstalldir -ChildPath "data\elasticsearch\jobs"
-	$dbtargetpath=Join-Path (Join-Path -Path $netoriuminstalldir -ChildPath $distributionname) -ChildPath "data\elasticsearch"
-	Copy-Item $dbpath -Destination $dbtargetpath -Recurse
+	$source=Join-Path -Path $jobsinstalldir -ChildPath "data\elasticsearch\jobs"
+	$target=Join-Path (Join-Path -Path $netoriuminstalldir -ChildPath $distributionname) -ChildPath "data\elasticsearch"
+	Copy-Item $source -Destination $target -Recurse
 	if ($?.Equals($False))
 	{
-		ExitWithMessage ("Could not copy data {0} to {1}. ErrorMessage: {2}" -f $dbpath, $dbtargetpath, $Error[0])
+		ExitWithMessage ("Could not copy data {0} to {1}. ErrorMessage: {2}" -f $source, $target, $Error[0])
+    }
+
+	$source=Join-Path -Path $jobsinstalldir -ChildPath "etc\JOBS-Runtime-wrapper.conf"
+	$target=Join-Path (Join-Path -Path $netoriuminstalldir -ChildPath $distributionname) -ChildPath "etc"
+	Copy-Item $source -Destination $target -Recurse
+	if ($?.Equals($False))
+	{
+		ExitWithMessage ("Could not copy {0} to {1}. ErrorMessage: {2}" -f $source, $target, $Error[0])
+    }
+
+	$source=Join-Path -Path $jobsinstalldir -ChildPath "bin\JOBS-Runtime-service.bat"
+	$target=Join-Path (Join-Path -Path $netoriuminstalldir -ChildPath $distributionname) -ChildPath "bin"
+	Copy-Item $source -Destination $target -Recurse
+	if ($?.Equals($False))
+	{
+		ExitWithMessage ("Could not copy {0} to {1}. ErrorMessage: {2}" -f $source, $target, $Error[0])
     }
 }
 
-Function StartStopService ($jobsserviceid, $dostart)
+Function HandleServiceStartStopErrors ($processexitcode)
+{
+	if ($processexitcode -eq 0)
+	{
+		#everything is fine
+		return
+	}
+	elseif ($processexitcode -eq -8003)
+	{
+		ExitWithMessage "Error starting service"
+	}
+	elseif ($processexitcode -eq -8004)
+	{
+		ExitWithMessage "Error stopping service"
+	}
+	else
+	{
+		ExitWithMessage ("Unknown error start/stop service. Exit code {0}" -f $processexitcode)
+	}
+}
+
+Function StartStopService ($jobsinstalldir, $jobsserviceid, $dostart)
 {
 	$startstopparam
 	if ($dostart -eq $True)
@@ -50,19 +122,18 @@ Function StartStopService ($jobsserviceid, $dostart)
 	{
 		$startstopparam="-dostopservice"
 	}
-    $processresult = Start-Process powershell.exe -PassThru -Wait -Verb Runas -ArgumentList '-windowstyle', 'Hidden', `
-	    '-File', "D:\tmp\powershell\jobsinstaller\servicehelper.ps1", $jobsserviceid, $startstopparam
 
-	#TODO replace with variable script location
-	#TODO Error handling
+	$startstopscript=Join-Path -path $jobsinstalldir -ChildPath "bin\servicehelper.ps1"
+    $processresult = Start-Process powershell.exe -PassThru -Wait -Verb Runas -ArgumentList '-windowstyle', 'Hidden', `
+	    '-File', $startstopscript, $jobsserviceid, $startstopparam
+
+	HandleServiceStartStopErrors $processresult.ExitCode
 }
 
 
 ###### This is the entry point to the script ######
 
 Write-Host "`n###### Updating Netorium JOBS ######`n"
-
-Import-Module .\installhelpers.psm1
 
 $jobsserviceid="JOBS-Runtime"
 $jobsfolder="Jobs"
@@ -84,18 +155,18 @@ Write-Host "extracting distro"
 ExtractDistro $jobsdistribution $netoriuminstalldir
 
 Write-Host "stopping windows service"
-StartStopService $jobsserviceid $False
+StartStopService $jobsinstalldir $jobsserviceid $False
 
 Write-Host "copying data"
-CopyDatabase $jobsinstalldir $netoriuminstalldir $distributionname
+CopyData $jobsinstalldir $netoriuminstalldir $distributionname
 
 #Sometimes removing doesn't work after copying. Waiting a little should help
-Start-Sleep -Milliseconds 500
+Start-Sleep -Milliseconds 2000
 Remove-Item $jobsinstalldir -Recurse
 
 RenameToJobsfolder $netoriuminstalldir $distributionname $jobsfolder
 
 Write-Host "starting windows service"
-StartStopService $jobsserviceid $True
+StartStopService $jobsinstalldir $jobsserviceid $True
 
 Write-Host "`n###### Netorium JOBS updated successfully ######`n"

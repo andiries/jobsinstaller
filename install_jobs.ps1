@@ -2,20 +2,6 @@
 # installs JOBS on windows
 #
 
-
-
-
-
-#TODO Use functions in module installhelpers.psm1
-
-
-
-
-
-
-
-
-
 Param(
   [Parameter(Mandatory=$True)]
   [string]$installdir

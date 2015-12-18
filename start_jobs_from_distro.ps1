@@ -3,10 +3,16 @@
 #
 
 Param(
-  [Parameter(Mandatory=$True)]
+  [Parameter(Mandatory=$True)] 
   [string]$distributionpath,
   [Parameter(Mandatory=$True)]
   [string]$installdir,
+  [Parameter(Mandatory=$True)]
+  [string]$distributionname,
+  [Parameter(Mandatory=$True)]
+  [string]$bobykarpath,
+  [Parameter(Mandatory=$True)]
+  [string]$jobsfolder,
   [switch]$debugmode
 )
 
@@ -21,35 +27,32 @@ Function ExitWithMessage($ExitMessage)
 
 #endregion
 
-#$distributionpath="D:\src\netorium\JOBS\jobs-distribution\target\"
-#$distributionpath="Z:\shared\"
-#$installdir="D:\programme"
-#$installdir="c:\Users\andreas ries\programme"
 
-$distributionname="jobs-distribution-0.0.25-SNAPSHOT"
-$bobykarname="jobsboby-feature-0.0.25-SNAPSHOT.kar"
 $jobsdistribution=(Join-Path -path $distributionpath -ChildPath $distributionname) + ".zip"
-$bobykar=Join-Path -path $distributionpath -ChildPath $bobykarname
-$company="netorium"
-$jobsfolder="B_Develop"
-
-$netoriuminstalldir=Join-Path -path $installdir -ChildPath $company
-
+#check, if distro exists
 if (-Not (Test-Path $jobsdistribution)) 
 {
     ExitWithMessage ("Distribution {0} doesn't exist!" -f $jobsdistribution)
 } 
 
-#check, if installdir exists
-if (-Not (Test-Path $netoriuminstalldir)) 
+#check, if installdir exists. If not, create it
+if (-Not (Test-Path $installdir)) 
 {
 	#try creating installdir
-    New-Item -Path $netoriuminstalldir -ItemType directory
+    New-Item -Path $installdir -ItemType directory
 	if ($?.Equals($false))
 	{
-		ExitWithMessage ("Error creating {0}. ErrorMessage: {1}!" -f $netoriuminstalldir, $Error[0])
+		ExitWithMessage ("Error creating {0}. ErrorMessage: {1}!" -f $installdir, $Error[0])
     }
 }
+
+#check, if target path already exists
+$newdistributionpath=Join-Path -path $installdir -ChildPath $jobsfolder
+if(Test-Path $newdistributionpath)
+{
+	ExitWithMessage ("Target path {0} already exists" -f $newdistributionpath)
+}
+
 
 #if (-Not (Test-Path $bobykar)) 
 #{
@@ -59,16 +62,20 @@ if (-Not (Test-Path $netoriuminstalldir))
 
 #extracting distribution
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::ExtractToDirectory($jobsdistribution, $netoriuminstalldir)
+[System.IO.Compression.ZipFile]::ExtractToDirectory($jobsdistribution, $installdir)
 if ($?.Equals($False))
 {
 	ExitWithMessage ("Error unzipping distribution. ErrorMessage: {0}!" -f $Error[0])
 }
 
 Start-Sleep -Milliseconds 500
-Rename-Item -path (Join-Path -path $netoriuminstalldir -ChildPath $distributionname) -NewName $jobsfolder
+$distributionpath=Join-Path -path $installdir -ChildPath $distributionname
+Rename-Item -path $distributionpath -NewName $newdistributionpath
 
-$karafscript=[io.path]::combine($netoriuminstalldir, $jobsfolder, "bin\karaf.bat")
+Set-Location $newdistributionpath
+
+
+$karafscript=[io.path]::combine($installdir, $jobsfolder, "bin\karaf.bat")
 $karafscript="""$karafscript"""
 
 $cmdparams=@("/K";$karafscript)
@@ -80,5 +87,5 @@ if($debugmode.Equals($True))
 
 Start-Process cmd.exe $cmdparams
 
-Write-Host "JOBS successfully installed"
+Write-Host "JOBS successfully started"
 
